@@ -2,6 +2,7 @@
 //
 // A Lua module is a directory with an init.lua that returns a table with a
 // name, optional requires, a start function, and an optional stop function.
+// An optional overlay/ subdirectory is served as the module's overlay page.
 // Each module gets its own Lua state. Calls into one module are serialized,
 // interrupted on unload, and limited to a number of instructions.
 // See docs/lua.md for the host API.
@@ -129,9 +130,27 @@ func (m *Module) define(src string) error {
 func (m *Module) Name() string       { return m.name }
 func (m *Module) Requires() []string { return m.requires }
 
+// Start mounts the module's overlay directory, if it has one, and runs start.
 func (m *Module) Start(host *core.Host) error {
 	m.host = host
+	if err := m.mountOverlay(); err != nil {
+		return err
+	}
 	return m.call(host.Context(), m.start, newHostTable(m))
+}
+
+// mountOverlay serves <module dir>/overlay as the module's overlay page.
+func (m *Module) mountOverlay() error {
+	dir := filepath.Join(filepath.Dir(m.path), "overlay")
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return nil //nolint:nilerr // no overlay directory is the common case
+	}
+	err := m.host.Overlay().Mount(os.DirFS(dir))
+	if errors.Is(err, core.ErrNoOverlays) {
+		m.host.Logger().Warn("overlay directory ignored: overlays are not configured", "dir", dir)
+		return nil
+	}
+	return err
 }
 
 // Stop runs the module's stop function, if any, and releases the Lua state.

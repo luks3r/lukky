@@ -37,6 +37,9 @@ type Config struct {
 	Greeter struct {
 		Interval time.Duration `koanf:"interval"` // 0 disables the reminder
 	} `koanf:"greeter"`
+	Overlay struct {
+		Address string `koanf:"address"` // host:port for overlay pages; empty disables them
+	} `koanf:"overlay"`
 	Lua struct {
 		Dir             string `koanf:"dir"`              // one subdirectory per module
 		MaxInstructions int64  `koanf:"max_instructions"` // per callback; 0 uses the default
@@ -48,6 +51,7 @@ func defaultConfig() Config {
 	c.Log.Level = "info"
 	c.Greeter.Interval = 2 * time.Minute
 	c.Lua.Dir = "scripts"
+	c.Overlay.Address = "127.0.0.1:7878"
 	return c
 }
 

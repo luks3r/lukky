@@ -60,6 +60,10 @@ return {
 
 Lua modules have the same commands, events, timers, and storage as Go modules, and run sandboxed. See [Lua modules](docs/lua.md) and the example in `examples/lua/shoutout`.
 
+## Overlays
+
+Lukky serves overlay pages for OBS on `http://127.0.0.1:7878/`. A Lua module with an `overlay/` directory gets a page at `/overlays/<module>/`; add that URL as a Browser Source in OBS. The module sends live data with `host.overlay.push` (one-time events, such as alerts) and `host.overlay.set` (values a reloaded page receives again). Pages load `/lukky.js` and call `lukky.on("event", handler)`. Go modules use `host.Overlay()`.
+
 ## Configuration
 
 Lukky reads its settings from three places in the working directory. Later ones win:
@@ -95,6 +99,7 @@ adapters/twitch/      Twitch chat over IRC and token management
 modules/greeter/      Small static command and timer example
 modules/aliases/      User-managed text aliases stored in host storage
 lua/                  Lua module runtime; LuaLS type definitions in lua/types
+overlay/              Overlay server for OBS browser sources
 examples/lua/         Example Lua modules
 storage/sqlite/       SQLite database for host storage
 storage/storagetest/  Shared tests for storage backends

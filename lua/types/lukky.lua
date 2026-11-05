@@ -37,6 +37,10 @@
 ---@field warn fun(msg: string, fields?: table)
 ---@field error fun(msg: string, fields?: table)
 
+---@class lukky.Overlay
+---@field push fun(event: string, data: any) Send a one-time event, such as an alert, to the module's overlay page.
+---@field set fun(key: string, data: any) Store and send a value; pages that connect later receive it first.
+
 ---@class lukky.Json
 ---@field encode fun(value: any): string
 ---@field decode fun(text: string): any
@@ -54,6 +58,7 @@
 ---@field send fun(to: lukky.Target, text: string)
 ---@field reply fun(msg: lukky.Message, text: string) Send to the channel msg came from.
 ---@field store lukky.Store Storage private to this module.
+---@field overlay lukky.Overlay Live data for the page in the module's overlay/ directory.
 ---@field log lukky.Log
 ---@field json lukky.Json
 

@@ -138,6 +138,28 @@ text, err := store.Get(ctx, "discord") // core.ErrNotFound if missing
 
 The namespace is the module name. Data survives unload and reload, and with the default database it also survives restarts. Renaming a module starts it with an empty namespace.
 
+## Overlays
+
+A module can have an overlay page, for example an OBS browser source. Mount its files once, then send data:
+
+```go
+//go:embed overlay
+var overlayFiles embed.FS
+
+func (m *Module) Start(host *core.Host) error {
+    files, _ := fs.Sub(overlayFiles, "overlay")
+    if err := host.Overlay().Mount(files); err != nil {
+        return err
+    }
+    ...
+}
+
+host.Overlay().Push(ctx, "alert", Alert{User: "ann"}) // one-time event
+host.Overlay().Set(ctx, "goal", Goal{Current: 3})    // stored; replayed to pages that connect later
+```
+
+The page is served at `http://127.0.0.1:7878/overlays/<module>/`. In the page, load `/lukky.js` and call `lukky.on("alert", data => ...)`. Without an overlay server, these calls return `core.ErrNoOverlays`.
+
 ## Require other modules
 
 A module that depends on another one implements `core.Requirer`:

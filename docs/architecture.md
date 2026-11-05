@@ -64,11 +64,21 @@ If a module fails or crashes during startup, everything it registered is rolled 
 | Chat output, to a target or as a reply | Implemented |
 | Logging, tagged with the module name | Implemented |
 | Key-value storage, namespaced per module | Implemented |
+| Overlays: page files and live data per module | Implemented |
 | HTTP / WebSocket | Added when a real integration needs it |
 
 Events report that something happened. Services perform operations or return information.
 
 **Adapters.** Connect external platforms. An adapter translates platform input into internal events and implements services such as chat output. Platform protocols stay in the adapter. An adapter that receives bursty input buffers it in its own bounded queue, so the dispatcher can stay synchronous. When the queue is full, new input is dropped and logged. The Twitch adapter follows this pattern: it reconnects with backoff, maps badges to normalized roles, and replaces line breaks in outgoing text. It also owns its credentials: it validates the token hourly, refreshes it when needed, and saves rotated tokens to a local state file. When several platforms are active, chat output is routed by the target's platform.
+
+## Overlays
+
+The overlay server serves each module's overlay page at `/overlays/<module>/`, for example as an OBS browser source. Pages receive data through server-sent events at `/overlays/<module>/events`, with the `lukky.js` helper. A module sends two kinds of data:
+
+- **push**: a one-time event, such as an alert. A page that connects later does not see it.
+- **set**: a stored value, such as a goal counter. A page that connects or reconnects receives every stored value first.
+
+Stored values live in memory and start empty after a restart. A page that cannot keep up is disconnected; its browser reconnects and receives the stored values again. The server listens on `127.0.0.1` by default because pages have no authentication.
 
 ## Messages
 

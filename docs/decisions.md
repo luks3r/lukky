@@ -44,6 +44,8 @@ Each choice lists its reason. The list separates what we rule out from what we s
 
 **Lua modules on `iceisfun/golua` v2.** *Why:* it is the only candidate that stops a running script on context cancellation and frees the goroutines of abandoned coroutines. A Lua module gets one state behind a per-module lock and runs sandboxed with an instruction limit per callback. See `lua.md`.
 
+**Overlays use server-sent events.** *Why:* pages only receive data, the browser reconnects on its own, and the server needs only the standard library. Separate push and set calls keep alerts from replaying while counters survive page reloads.
+
 **Go for the core.** Go fits "simple and understandable" and fast iteration while the API is still changing. A pure-Go Lua runtime covers the extension goals.
 
 ## Deferred

@@ -49,6 +49,7 @@ A Go adapter type wraps the table and implements `core.Module`, `core.Stopper`, 
 | `host.Send`, `host.Reply` | same names | |
 | `host.Logger()` | `host.log.info(msg, fields)` and so on | |
 | `host.Context()` | none | Cancellation is handled by the runtime; see below. |
+| `host.Overlay()` | `host.overlay.push/set` | The module's `overlay/` directory is mounted automatically. |
 | — | `host.json.encode/decode` | Converts between tables and JSON text. |
 
 Every host function raises a Lua error when the host call fails, for example when a send fails or an argument has the wrong type. The error ends the callback and is logged by the caller, like an error returned from a Go handler. Use `pcall` to handle it in Lua. `print` writes to the module's log.

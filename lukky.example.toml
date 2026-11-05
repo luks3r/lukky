@@ -12,6 +12,11 @@ channels = []
 [greeter]
 interval = "2m" # console reminder; "0s" disables it
 
+[overlay]
+# Overlay pages for OBS browser sources: http://127.0.0.1:7878/
+# Keep this on 127.0.0.1: the pages and their data have no authentication.
+address = "127.0.0.1:7878" # "" disables overlays
+
 [lua]
 dir = "scripts" # one subdirectory with an init.lua per module
 # max_instructions = 10000000 # per callback

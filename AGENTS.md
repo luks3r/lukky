@@ -21,6 +21,7 @@ core/                 Manager, scopes, event bus, router, scheduler, storage int
 adapters/twitch/      Twitch chat over IRC and token management
 modules/              Feature modules (greeter, aliases)
 lua/                  Lua module runtime and LuaLS type definitions (lua/types)
+overlay/              Overlay pages and live data for OBS browser sources
 examples/lua/         Example Lua modules
 storage/sqlite/       SQLite backend for host storage
 storage/storagetest/  Contract tests every storage backend must pass

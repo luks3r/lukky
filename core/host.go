@@ -12,6 +12,7 @@ type Services struct {
 	Commands *Router
 	Chat     ChatSender
 	Storage  Storage      // optional; defaults to in-memory storage
+	Overlays Overlays     // optional; without it, overlay calls return ErrNoOverlays
 	Logger   *slog.Logger // optional; defaults to slog.Default()
 }
 
@@ -32,6 +33,11 @@ func (h *Host) Logger() *slog.Logger { return h.scope.log }
 // Store returns key-value storage private to this module. Data survives
 // unload and reload; whether it survives restarts depends on the backend.
 func (h *Host) Store() Store { return Store{h.services.Storage, h.name} }
+
+// Overlay returns the module's overlay: its page files and live data.
+func (h *Host) Overlay() Overlay {
+	return Overlay{backend: h.services.Overlays, scope: h.scope, module: h.name}
+}
 
 // Handle registers a command.
 func (h *Host) Handle(matcher Matcher, handler CommandHandler) error {

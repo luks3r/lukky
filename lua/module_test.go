@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -436,4 +438,95 @@ func mustJSON(t *testing.T, v any) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+type recordedOverlay struct {
+	mu      sync.Mutex
+	mounted map[string]bool
+	events  []string
+}
+
+func (o *recordedOverlay) Mount(module string, _ fs.FS) (func(), error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.mounted[module] = true
+	return func() {
+		o.mu.Lock()
+		defer o.mu.Unlock()
+		delete(o.mounted, module)
+	}, nil
+}
+
+func (o *recordedOverlay) Push(_ context.Context, module, event string, data any) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.events = append(o.events, fmt.Sprintf("push %s/%s %v", module, event, data))
+	return nil
+}
+
+func (o *recordedOverlay) Set(_ context.Context, module, key string, data any) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.events = append(o.events, fmt.Sprintf("set %s/%s %v", module, key, data))
+	return nil
+}
+
+func TestOverlay(t *testing.T) {
+	overlay := &recordedOverlay{mounted: map[string]bool{}}
+	router := core.NewRouter()
+	manager, err := core.NewManager(context.Background(), core.Services{
+		Events: core.NewBus(), Commands: router, Chat: &outbox{}, Overlays: overlay,
+		Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer manager.Close()
+	dir := write(t, `
+return {
+  name = "alerts",
+  start = function(host)
+    host.command("!alert", function(msg, args)
+      host.overlay.push("alert", { text = args[1] })
+      host.overlay.set("last", args[1])
+    end)
+  end,
+}`)
+	if err := os.Mkdir(filepath.Join(dir, "overlay"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	m, err := Load(dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Load(m); err != nil {
+		t.Fatal(err)
+	}
+	if !overlay.mounted["alerts"] {
+		t.Fatal("overlay directory not mounted")
+	}
+	if err := router.Dispatch(context.Background(), core.Message{Source: channel, Text: "!alert hi"}); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"push alerts/alert map[text:hi]", "set alerts/last hi"}; !slices.Equal(overlay.events, want) {
+		t.Fatalf("got %q", overlay.events)
+	}
+	if err := manager.Unload("alerts"); err != nil {
+		t.Fatal(err)
+	}
+	if overlay.mounted["alerts"] {
+		t.Fatal("overlay still mounted after unload")
+	}
+}
+
+func TestOverlayWithoutServer(t *testing.T) {
+	f := newFixture(t)
+	f.load(`
+return {
+  name = "o",
+  start = function(host) host.command("!o", function() host.overlay.push("x", 1) end) end,
+}`)
+	if err := f.say(viewer, "!o"); err == nil || !strings.Contains(err.Error(), "not configured") {
+		t.Fatalf("got %v", err)
+	}
 }

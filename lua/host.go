@@ -78,6 +78,7 @@ func newHostTable(m *Module) vm.Value {
 		return 0
 	})
 
+	t.SetString("overlay", vm.NewTable(overlayTable(m)))
 	t.SetString("store", vm.NewTable(storeTable(m)))
 	t.SetString("log", vm.NewTable(logTable(h.Logger())))
 	t.SetString("json", vm.NewTable(jsonTable()))
@@ -129,6 +130,23 @@ func timerFunc(m *Module, name string, schedule func(time.Duration, func(context
 		}))
 		return 0
 	}
+}
+
+func overlayTable(m *Module) *vm.Table {
+	overlay := m.host.Overlay()
+	t := vm.NewEmptyTable()
+	for name, send := range map[string]func(context.Context, string, any) error{
+		"push": overlay.Push, "set": overlay.Set,
+	} {
+		t.SetString(name, vm.NewNativeFunc(func(v *vm.VM) int {
+			key := argString(v, 1, "overlay."+name)
+			data, err := fromLua(v.Get(2))
+			check(err)
+			check(send(m.ctx, key, data))
+			return 0
+		}))
+	}
+	return t
 }
 
 func storeTable(m *Module) *vm.Table {

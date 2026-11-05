@@ -22,6 +22,7 @@ import (
 	"github.com/luks3r/lukky/core"
 	"github.com/luks3r/lukky/modules/aliases"
 	"github.com/luks3r/lukky/modules/greeter"
+	"github.com/luks3r/lukky/overlay"
 	"github.com/luks3r/lukky/storage/sqlite"
 )
 
@@ -88,7 +89,13 @@ func run(cfg Config) error {
 		chat[twitch.Platform] = tw
 	}
 
-	manager, err := core.NewManager(ctx, core.Services{Events: events, Commands: commands, Chat: chat, Storage: storage})
+	services := core.Services{Events: events, Commands: commands, Chat: chat, Storage: storage}
+	var overlays *overlay.Server
+	if cfg.Overlay.Address != "" {
+		overlays = overlay.NewServer(slog.Default())
+		services.Overlays = overlays
+	}
+	manager, err := core.NewManager(ctx, services)
 	if err != nil {
 		return err
 	}
@@ -122,6 +129,13 @@ func run(cfg Config) error {
 	var adapters sync.WaitGroup
 	defer adapters.Wait()
 	defer stop() // runs before adapters.Wait, so the adapters see cancellation
+	if overlays != nil {
+		adapters.Go(func() {
+			if err := overlays.ListenAndServe(ctx, cfg.Overlay.Address); err != nil {
+				slog.Error("overlay server stopped", "error", err)
+			}
+		})
+	}
 	if tw != nil {
 		adapters.Go(func() { auth.Run(ctx) })
 		adapters.Go(func() {
