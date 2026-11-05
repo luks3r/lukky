@@ -32,7 +32,7 @@ func (f *fakeTwitch) server(t *testing.T) *httptest.Server {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"login": "lukserbot", "scopes": f.scopes, "expires_in": 14000})
+		_ = json.NewEncoder(w).Encode(map[string]any{"login": "lukserbot", "user_id": "42", "scopes": f.scopes, "expires_in": 14000})
 	})
 	mux.HandleFunc("POST /token", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
@@ -66,7 +66,7 @@ var chatScopes = []string{"chat:read", "chat:edit"}
 
 func TestAuthValidToken(t *testing.T) {
 	fake := &fakeTwitch{access: "access-old", refresh: "refresh-old", scopes: chatScopes}
-	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", AccessToken: "access-old", RefreshToken: "refresh-old"}, "")
+	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", RequiredScopes: ChatScopes, AccessToken: "access-old", RefreshToken: "refresh-old"}, "")
 	login, err := a.Login(context.Background())
 	if err != nil || login != "lukserbot" {
 		t.Fatalf("login %q, err %v", login, err)
@@ -80,7 +80,7 @@ func TestAuthRefreshesAndSavesRotatedTokens(t *testing.T) {
 	fake := &fakeTwitch{access: "access-current", refresh: "refresh-old", scopes: chatScopes}
 	srv := fake.server(t)
 	state := filepath.Join(t.TempDir(), "state", "twitch-token.json")
-	a := newTestAuth(t, srv, Credentials{ClientID: "id", ClientSecret: "secret", AccessToken: "expired", RefreshToken: "refresh-old"}, state)
+	a := newTestAuth(t, srv, Credentials{ClientID: "id", ClientSecret: "secret", RequiredScopes: ChatScopes, AccessToken: "expired", RefreshToken: "refresh-old"}, state)
 	if _, err := a.Login(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestAuthRefreshesAndSavesRotatedTokens(t *testing.T) {
 	}
 
 	// A restart prefers the saved tokens over the stale ones from the environment.
-	restarted := newTestAuth(t, srv, Credentials{ClientID: "id", ClientSecret: "secret", AccessToken: "expired", RefreshToken: "refresh-old"}, state)
+	restarted := newTestAuth(t, srv, Credentials{ClientID: "id", ClientSecret: "secret", RequiredScopes: ChatScopes, AccessToken: "expired", RefreshToken: "refresh-old"}, state)
 	if _, err := restarted.Login(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestAuthRefreshesAndSavesRotatedTokens(t *testing.T) {
 
 func TestAuthInvalidateForcesRecheck(t *testing.T) {
 	fake := &fakeTwitch{access: "access-old", refresh: "refresh-old", scopes: chatScopes}
-	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", AccessToken: "access-old", RefreshToken: "refresh-old"}, "")
+	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", RequiredScopes: ChatScopes, AccessToken: "access-old", RefreshToken: "refresh-old"}, "")
 	if _, err := a.Login(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestAuthInvalidateForcesRecheck(t *testing.T) {
 
 func TestAuthRejectsMissingScope(t *testing.T) {
 	fake := &fakeTwitch{access: "a", refresh: "r", scopes: []string{"chat:read"}}
-	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", AccessToken: "a", RefreshToken: "r"}, "")
+	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", RequiredScopes: ChatScopes, AccessToken: "a", RefreshToken: "r"}, "")
 	if _, err := a.Login(context.Background()); err == nil || !strings.Contains(err.Error(), "chat:edit") {
 		t.Fatalf("expected missing scope error, got %v", err)
 	}
@@ -134,7 +134,7 @@ func TestAuthRejectsMissingScope(t *testing.T) {
 
 func TestAuthReportsRejectedRefresh(t *testing.T) {
 	fake := &fakeTwitch{access: "a", refresh: "r", scopes: chatScopes}
-	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", AccessToken: "expired", RefreshToken: "wrong"}, "")
+	a := newTestAuth(t, fake.server(t), Credentials{ClientID: "id", ClientSecret: "secret", RequiredScopes: ChatScopes, AccessToken: "expired", RefreshToken: "wrong"}, "")
 	_, err := a.Login(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "re-authorize") || strings.Contains(err.Error(), "wrong") {
 		t.Fatalf("got %v", err)

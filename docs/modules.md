@@ -138,6 +138,18 @@ text, err := store.Get(ctx, "discord") // core.ErrNotFound if missing
 
 The namespace is the module name. Data survives unload and reload, and with the default database it also survives restarts. Renaming a module starts it with an empty namespace.
 
+## Twitch events
+
+The Twitch adapter publishes typed topics for channel events:
+
+```go
+err := core.Subscribe(host, twitch.Follow, func(ctx context.Context, e twitch.FollowEvent) error {
+    return host.Overlay().Push(ctx, "alert", e)
+})
+```
+
+The topics are `twitch.Follow`, `Subscribe`, `Resubscribe`, `GiftSubs`, `Cheer`, `Raid`, `Redemption`, `StreamOnline`, and `StreamOffline`. They need the broadcaster token.
+
 ## Overlays
 
 A module can have an overlay page, for example an OBS browser source. Mount its files once, then send data:

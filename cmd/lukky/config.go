@@ -28,11 +28,14 @@ type Config struct {
 		Level string `koanf:"level"` // debug, info, warn, error
 	} `koanf:"log"`
 	Twitch struct {
-		ClientID         string   `koanf:"client_id"`
-		ClientSecret     string   `koanf:"client_secret"`
-		UserToken        string   `koanf:"user_token"`
-		UserRefreshToken string   `koanf:"user_refresh_token"`
-		Channels         []string `koanf:"channels"`
+		ClientID         string `koanf:"client_id"`
+		ClientSecret     string `koanf:"client_secret"`
+		UserToken        string `koanf:"user_token"`
+		UserRefreshToken string `koanf:"user_refresh_token"`
+		// Broadcaster tokens enable channel events (follows, subs, cheers, raids, ...).
+		BroadcasterToken        string   `koanf:"broadcaster_token"`
+		BroadcasterRefreshToken string   `koanf:"broadcaster_refresh_token"`
+		Channels                []string `koanf:"channels"`
 	} `koanf:"twitch"`
 	Greeter struct {
 		Interval time.Duration `koanf:"interval"` // 0 disables the reminder

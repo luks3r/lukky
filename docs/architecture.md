@@ -71,6 +71,8 @@ Events report that something happened. Services perform operations or return inf
 
 **Adapters.** Connect external platforms. An adapter translates platform input into internal events and implements services such as chat output. Platform protocols stay in the adapter. An adapter that receives bursty input buffers it in its own bounded queue, so the dispatcher can stay synchronous. When the queue is full, new input is dropped and logged. The Twitch adapter follows this pattern: it reconnects with backoff, maps badges to normalized roles, and replaces line breaks in outgoing text. It also owns its credentials: it validates the token hourly, refreshes it when needed, and saves rotated tokens to a local state file. When several platforms are active, chat output is routed by the target's platform.
 
+Twitch channel events come from a separate EventSub client that uses the broadcaster's token. It subscribes to every event type the token has scopes for, follows Twitch's reconnect handover without resubscribing, starts a new session after missed keepalives, drops duplicate deliveries, and publishes typed topics such as `twitch.follow`. The adapter owns these topics; the core knows nothing about them.
+
 ## Overlays
 
 The overlay server serves each module's overlay page at `/overlays/<module>/`, for example as an OBS browser source. Pages receive data through server-sent events at `/overlays/<module>/events`, with the `lukky.js` helper. A module sends two kinds of data:

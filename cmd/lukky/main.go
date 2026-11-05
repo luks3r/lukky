@@ -31,6 +31,8 @@ const (
 	dotenvPath      = ".env"
 	databasePath    = ".lukky/lukky.sqlite"
 	twitchStatePath = ".lukky/twitch-token.json" // holds secrets
+	// Broadcaster tokens, rotated and saved like the bot's. Holds secrets.
+	broadcasterStatePath = ".lukky/twitch-broadcaster-token.json"
 )
 
 // otherCommands are commands of other modules that aliases must not shadow.
@@ -136,6 +138,16 @@ func run(cfg Config) error {
 			}
 		})
 	}
+	if es, esAuth, err := newEventSub(ctx, cfg, events); err != nil {
+		return err
+	} else if es != nil {
+		adapters.Go(func() { esAuth.Run(ctx) })
+		adapters.Go(func() {
+			if err := es.Run(ctx); err != nil {
+				slog.Error("twitch events stopped", "error", err)
+			}
+		})
+	}
 	if tw != nil {
 		adapters.Go(func() { auth.Run(ctx) })
 		adapters.Go(func() {
@@ -174,6 +186,33 @@ func (m chatIngress) Start(host *core.Host) error {
 	return core.Subscribe(host, core.ChatMessage, m.router.Dispatch)
 }
 
+// newEventSub returns nil values when no broadcaster token is configured.
+func newEventSub(ctx context.Context, cfg Config, events *core.Bus) (*twitch.EventSub, *twitch.Auth, error) {
+	c := cfg.Twitch
+	if c.BroadcasterToken == "" && c.BroadcasterRefreshToken == "" {
+		return nil, nil, nil
+	}
+	auth, err := twitch.NewAuth(twitch.Credentials{
+		ClientID:     c.ClientID,
+		ClientSecret: c.ClientSecret,
+		AccessToken:  c.BroadcasterToken,
+		RefreshToken: c.BroadcasterRefreshToken,
+	}, broadcasterStatePath, slog.Default())
+	if err != nil {
+		return nil, nil, fmt.Errorf("broadcaster token: %w", err)
+	}
+	login, err := auth.Login(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("broadcaster token: %w", err)
+	}
+	slog.Info("twitch events", "broadcaster", login)
+	es, err := twitch.NewEventSub(c.ClientID, auth, events, slog.Default())
+	if err != nil {
+		return nil, nil, err
+	}
+	return es, auth, nil
+}
+
 // newTwitch returns nil values when Twitch is not configured.
 func newTwitch(ctx context.Context, cfg Config, events *core.Bus) (*twitch.Adapter, *twitch.Auth, error) {
 	c := cfg.Twitch
@@ -184,10 +223,11 @@ func newTwitch(ctx context.Context, cfg Config, events *core.Bus) (*twitch.Adapt
 		return nil, nil, errors.New("twitch.channels (TWITCH_CHANNELS) is required when Twitch is configured")
 	}
 	auth, err := twitch.NewAuth(twitch.Credentials{
-		ClientID:     c.ClientID,
-		ClientSecret: c.ClientSecret,
-		AccessToken:  c.UserToken,
-		RefreshToken: c.UserRefreshToken,
+		ClientID:       c.ClientID,
+		ClientSecret:   c.ClientSecret,
+		AccessToken:    c.UserToken,
+		RefreshToken:   c.UserRefreshToken,
+		RequiredScopes: twitch.ChatScopes,
 	}, twitchStatePath, slog.Default())
 	if err != nil {
 		return nil, nil, err

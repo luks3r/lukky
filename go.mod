@@ -3,6 +3,7 @@ module github.com/luks3r/lukky
 go 1.27
 
 require (
+	github.com/coder/websocket v1.8.15
 	github.com/gempir/go-twitch-irc/v4 v4.4.1
 	github.com/iceisfun/golua/v2 v2.0.5
 	github.com/knadh/koanf/parsers/dotenv v1.1.3

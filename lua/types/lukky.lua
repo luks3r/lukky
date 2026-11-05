@@ -67,3 +67,68 @@
 ---@field requires? string[] Modules that must be loaded first.
 ---@field start fun(host: lukky.Host)
 ---@field stop? fun()
+
+-- Twitch events, received with host.on("<topic>", fn). They need the
+-- broadcaster token (see README). Users are empty for anonymous gifts and cheers.
+
+---@class lukky.twitch.User
+---@field id string
+---@field login string
+---@field name string
+
+---@class lukky.twitch.Follow             # "twitch.follow"
+---@field channel string
+---@field user lukky.twitch.User
+---@field followed_at string RFC 3339 time
+
+---@class lukky.twitch.Subscribe          # "twitch.subscribe"
+---@field channel string
+---@field user lukky.twitch.User
+---@field tier "1000"|"2000"|"3000"
+---@field is_gift boolean
+
+---@class lukky.twitch.Gift               # "twitch.gift"
+---@field channel string
+---@field user lukky.twitch.User
+---@field anonymous boolean
+---@field total integer
+---@field tier string
+---@field cumulative_total integer
+
+---@class lukky.twitch.Resub              # "twitch.resub"
+---@field channel string
+---@field user lukky.twitch.User
+---@field tier string
+---@field message string
+---@field cumulative_months integer
+---@field streak_months integer
+---@field duration_months integer
+
+---@class lukky.twitch.Cheer              # "twitch.cheer"
+---@field channel string
+---@field user lukky.twitch.User
+---@field anonymous boolean
+---@field bits integer
+---@field message string
+
+---@class lukky.twitch.Raid               # "twitch.raid"
+---@field channel string
+---@field from lukky.twitch.User
+---@field viewers integer
+
+---@class lukky.twitch.Redemption         # "twitch.redemption"
+---@field channel string
+---@field user lukky.twitch.User
+---@field reward_id string
+---@field reward_title string
+---@field cost integer
+---@field input string
+---@field status string
+
+---@class lukky.twitch.StreamOnline       # "twitch.stream_online"
+---@field channel string
+---@field type string
+---@field started_at string RFC 3339 time
+
+---@class lukky.twitch.StreamOffline      # "twitch.stream_offline"
+---@field channel string

@@ -58,7 +58,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 - Run `go fix ./...` after larger edits.
 - Write timer and scheduling tests with `testing/synctest`, not real sleeps.
 - New storage backends must pass `storagetest.Run`.
-- Keep `lua/types/lukky.lua` in sync with the host table in `lua/host.go`.
+- Keep `lua/types/lukky.lua` in sync with the host table in `lua/host.go` and the event types in `adapters/twitch/events.go`.
 - Add a `//nolint` only with the linter name and a reason.
 - Keep comments short and about why, not what.
 
@@ -81,7 +81,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 
 ## Status
 
-All nine steps of the implementation order in `docs/decisions.md` are done, including Lua modules. Candidates next: migrating Twitch chat to EventSub plus Helix, and CI. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
+All nine steps of the implementation order in `docs/decisions.md` are done, plus overlays and Twitch channel events. Candidates next: OBS control through obs-websocket, migrating Twitch chat to EventSub plus Helix, and CI. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
 
 ## Response style
 

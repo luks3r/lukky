@@ -530,3 +530,42 @@ return {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestAlertsExample(t *testing.T) {
+	overlay := &recordedOverlay{mounted: map[string]bool{}}
+	bus, router := core.NewBus(), core.NewRouter()
+	manager, err := core.NewManager(context.Background(), core.Services{
+		Events: bus, Commands: router, Chat: &outbox{}, Overlays: overlay, Logger: slog.New(slog.DiscardHandler),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer manager.Close()
+	m, err := Load("../examples/lua/alerts", Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Load(m); err != nil {
+		t.Fatal(err)
+	}
+	if !overlay.mounted["alerts"] {
+		t.Fatal("overlay not mounted")
+	}
+	raid := map[string]any{"channel": "luks3r", "from": map[string]any{"id": "7", "login": "friend", "name": "Friend"}, "viewers": 12}
+	if err := bus.Publish(context.Background(), core.Event{Topic: "twitch.raid", Payload: raid}); err != nil {
+		t.Fatal(err)
+	}
+	if err := router.Dispatch(context.Background(), core.Message{Source: channel, User: moderator, Text: "!testalert cheer"}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"set alerts/count 0",
+		"push alerts/alert map[kind:raid text:is raiding with 12 viewers! title:Friend]",
+		"set alerts/count 1",
+		"push alerts/alert map[kind:cheer message:Cheer500 hype! text:cheered 500 bits! title:TestCheer]",
+		"set alerts/count 2",
+	}
+	if !slices.Equal(overlay.events, want) {
+		t.Fatalf("got  %q\nwant %q", overlay.events, want)
+	}
+}

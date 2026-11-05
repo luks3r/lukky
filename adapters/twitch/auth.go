@@ -28,7 +28,8 @@ const (
 	refreshMargin = 10 * time.Minute
 )
 
-var requiredScopes = []string{"chat:read", "chat:edit"}
+// ChatScopes are required for the bot account that reads and sends chat.
+var ChatScopes = []string{"chat:read", "chat:edit"}
 
 var errInvalidToken = errors.New("twitch: access token is invalid")
 
@@ -44,6 +45,8 @@ type Credentials struct {
 	ClientSecret string
 	AccessToken  string
 	RefreshToken string
+	// RequiredScopes must all be granted, or validation fails.
+	RequiredScopes []string
 }
 
 // Auth keeps a user access token valid. It validates the token at startup and
@@ -55,6 +58,8 @@ type Auth struct {
 	creds       Credentials
 	statePath   string
 	login       string
+	userID      string
+	scopes      []string
 	expiresAt   time.Time // zero when unknown; far future when the token never expires
 	http        *http.Client
 	log         *slog.Logger
@@ -105,7 +110,7 @@ func NewAuth(creds Credentials, statePath string, log *slog.Logger) (*Auth, erro
 	return a, nil
 }
 
-// Login validates the token, refreshing it if needed, and returns the bot account login.
+// Login validates the token, refreshing it if needed, and returns the account login.
 func (a *Auth) Login(ctx context.Context) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -113,6 +118,20 @@ func (a *Auth) Login(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return a.login, nil
+}
+
+// UserID returns the account's user ID. It is set after a successful Login.
+func (a *Auth) UserID() string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.userID
+}
+
+// HasScope reports whether the token grants scope. It is set after a successful Login.
+func (a *Auth) HasScope(scope string) bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return slices.Contains(a.scopes, scope)
 }
 
 func (a *Auth) Token(ctx context.Context) (string, error) {
@@ -153,6 +172,7 @@ func (a *Auth) Run(ctx context.Context) {
 
 type validation struct {
 	Login     string   `json:"login"`
+	UserID    string   `json:"user_id"`
 	Scopes    []string `json:"scopes"`
 	ExpiresIn int      `json:"expires_in"`
 }
@@ -177,12 +197,13 @@ func (a *Auth) check(ctx context.Context) error {
 }
 
 func (a *Auth) apply(v validation) error {
-	for _, scope := range requiredScopes {
+	for _, scope := range a.creds.RequiredScopes {
 		if !slices.Contains(v.Scopes, scope) {
-			return fmt.Errorf("twitch: token lacks the %q scope; re-authorize the bot with chat:read and chat:edit", scope)
+			return fmt.Errorf("twitch: token for %q lacks the %q scope; re-authorize it with %s",
+				v.Login, scope, strings.Join(a.creds.RequiredScopes, " "))
 		}
 	}
-	a.login = v.Login
+	a.login, a.userID, a.scopes = v.Login, v.UserID, v.Scopes
 	if v.ExpiresIn == 0 {
 		a.expiresAt = time.Now().AddDate(100, 0, 0)
 	} else {

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Lukky alerts</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="alert" class="hidden">
+    <div id="title"></div>
+    <div id="text"></div>
+    <div id="message"></div>
+  </div>
+  <script src="/lukky.js"></script>
+  <script>
+    // Alerts queue up so none are skipped when several arrive at once.
+    const queue = [];
+    let showing = false;
+    const box = document.getElementById("alert");
+
+    function next() {
+      const alert = queue.shift();
+      if (!alert) { showing = false; return; }
+      showing = true;
+      box.className = alert.kind;
+      document.getElementById("title").textContent = alert.title;
+      document.getElementById("text").textContent = alert.text;
+      document.getElementById("message").textContent = alert.message || "";
+      setTimeout(() => {
+        box.className = "hidden";
+        setTimeout(next, 600);
+      }, 5000);
+    }
+
+    lukky.on("alert", (alert) => {
+      queue.push(alert);
+      if (!showing) next();
+    });
+  </script>
+</body>
+</html>

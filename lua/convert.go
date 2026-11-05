@@ -16,9 +16,10 @@ const maxDepth = 64
 // string, float64, bool, and nil. Field names follow json tags.
 func plain(payload any) (any, error) {
 	switch payload.(type) {
-	case nil, bool, string, float64, map[string]any, []any:
+	case nil, bool, string, float64:
 		return payload, nil
 	}
+	// Maps and lists may hold any Go values, so they go through JSON too.
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

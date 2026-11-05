@@ -54,6 +54,10 @@ A Go adapter type wraps the table and implements `core.Module`, `core.Stopper`, 
 
 Every host function raises a Lua error when the host call fails, for example when a send fails or an argument has the wrong type. The error ends the callback and is logged by the caller, like an error returned from a Go handler. Use `pcall` to handle it in Lua. `print` writes to the module's log.
 
+## Twitch events
+
+With a broadcaster token, these topics carry Twitch channel events: `twitch.follow`, `twitch.subscribe`, `twitch.resub`, `twitch.gift`, `twitch.cheer`, `twitch.raid`, `twitch.redemption`, `twitch.stream_online`, and `twitch.stream_offline`. `lua/types/lukky.lua` describes their fields. `examples/lua/alerts` turns them into overlay alerts.
+
 ## Constraints and decisions
 
 **Concurrency.** A Lua state is not safe for concurrent use. Each Lua module gets one state, and every callback into it runs under a per-module lock. Handlers, timers, and event callbacks of one Lua module therefore never run in parallel. This is acceptable at chat volume.

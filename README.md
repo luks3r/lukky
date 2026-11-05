@@ -9,7 +9,7 @@ This repository is a working foundation, **not yet a production-ready Twitch bot
 ## Requirements
 
 - Go 1.27 or newer
-- Main libraries: [`go-twitch-irc`](https://github.com/gempir/go-twitch-irc) for Twitch chat, [`modernc.org/sqlite`](https://pkg.go.dev/modernc.org/sqlite) for storage (pure Go, no cgo), [`koanf`](https://github.com/knadh/koanf) for configuration, [`tint`](https://github.com/lmittmann/tint) for terminal logs, and [`golua`](https://github.com/iceisfun/golua) for Lua modules
+- Main libraries: [`go-twitch-irc`](https://github.com/gempir/go-twitch-irc) for Twitch chat, [`coder/websocket`](https://github.com/coder/websocket) for Twitch EventSub, [`modernc.org/sqlite`](https://pkg.go.dev/modernc.org/sqlite) for storage (pure Go, no cgo), [`koanf`](https://github.com/knadh/koanf) for configuration, [`tint`](https://github.com/lmittmann/tint) for terminal logs, and [`golua`](https://github.com/iceisfun/golua) for Lua modules
 - For development: [Task](https://taskfile.dev) and [golangci-lint](https://golangci-lint.run) (`brew install go-task golangci-lint`)
 
 ## Run it
@@ -90,12 +90,27 @@ Twitch users get the same commands as the console. Moderators and the broadcaste
 
 `.env` and `.lukky/` contain secrets and are git-ignored. Never commit them or paste their contents anywhere. If a token or the client secret leaks, revoke it in the Twitch developer console.
 
+## Twitch events and alerts
+
+With a broadcaster token, Lukky receives channel events through Twitch EventSub: follows, subs, resubs, gifts, cheers, raids, channel point redemptions, and stream online/offline. Modules subscribe to topics such as `twitch.follow`; Lua modules use `host.on("twitch.follow", fn)`.
+
+The broadcaster token belongs to the channel owner's account (for example `luks3r`), not the bot. Add it to `.env`:
+
+```sh
+twitch token -u -s "moderator:read:followers channel:read:subscriptions bits:read channel:read:redemptions"
+# sign in as the broadcaster, then set TWITCH_BROADCASTER_TOKEN and TWITCH_BROADCASTER_REFRESH_TOKEN
+```
+
+Event types whose scope is missing are skipped with a warning. The token is validated hourly, refreshed, and saved to `.lukky/twitch-broadcaster-token.json`, like the bot's.
+
+`examples/lua/alerts` shows alerts on an OBS overlay. Copy it into `scripts/`, add `http://127.0.0.1:7878/overlays/alerts/` as a Browser Source (1920×1080), and test with `!testalert raid` as a moderator.
+
 ## How it is organized
 
 ```text
 cmd/lukky/            Application wiring, configuration, and the local console
 core/                 Module lifecycle, event bus, command router, scheduler
-adapters/twitch/      Twitch chat over IRC and token management
+adapters/twitch/      Twitch chat (IRC), channel events (EventSub), token management
 modules/greeter/      Small static command and timer example
 modules/aliases/      User-managed text aliases stored in host storage
 lua/                  Lua module runtime; LuaLS type definitions in lua/types

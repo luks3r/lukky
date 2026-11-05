@@ -46,6 +46,8 @@ Each choice lists its reason. The list separates what we rule out from what we s
 
 **Overlays use server-sent events.** *Why:* pages only receive data, the browser reconnects on its own, and the server needs only the standard library. Separate push and set calls keep alerts from replaying while counters survive page reloads.
 
+**Twitch events through our own EventSub client.** *Why:* Go has no maintained EventSub WebSocket library, and the protocol is small: a welcome, Helix subscription requests, keepalives, and a reconnect handover. Events need the broadcaster's token, so it is a second login next to the bot's chat token.
+
 **Go for the core.** Go fits "simple and understandable" and fast iteration while the API is still changing. A pure-Go Lua runtime covers the extension goals.
 
 ## Deferred
