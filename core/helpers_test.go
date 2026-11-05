@@ -27,6 +27,7 @@ type testModule struct {
 	name    string
 	start   func(*Host) error
 	stopped *atomic.Int32
+	onStop  func()
 }
 
 func (m *testModule) Name() string { return m.name }
@@ -41,6 +42,9 @@ func (m *testModule) Start(h *Host) error {
 func (m *testModule) Stop(context.Context) error {
 	if m.stopped != nil {
 		m.stopped.Add(1)
+	}
+	if m.onStop != nil {
+		m.onStop()
 	}
 	return nil
 }

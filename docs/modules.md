@@ -138,6 +138,18 @@ text, err := store.Get(ctx, "discord") // core.ErrNotFound if missing
 
 The namespace is the module name. Data survives unload and reload, and with the default database it also survives restarts. Renaming a module starts it with an empty namespace.
 
+## Require other modules
+
+A module that depends on another one implements `core.Requirer`:
+
+```go
+func (Module) Requires() []string { return []string{"aliases"} }
+```
+
+`Load` fails with `core.ErrMissingRequirement` unless every required module is already loaded. `Unload` of a required module fails with `core.ErrRequiredByOthers` while its dependents are loaded. Load requirements first; the manager never reorders or loads modules for you.
+
+Requiring a module only checks that it is present. To call into it, pass its Go interface through your constructor, as shown below, or communicate through events.
+
 ## State and dependencies
 
 Pass dependencies through the module's constructor instead of reaching into a global service locator:

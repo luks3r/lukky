@@ -75,6 +75,6 @@ Each choice lists its reason. The list separates what we rule out from what we s
 4. Twitch adapter with its own input queue (done).
 5. Namespaced storage service (done).
 6. Typed topics (done).
-7. Declared module dependencies.
+7. Declared module dependencies (done).
 8. Review the host API against Lua constraints.
 9. Lua runtime prototype, then implementation.

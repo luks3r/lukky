@@ -76,7 +76,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 
 ## Status
 
-Steps 1 to 6 of the implementation order in `docs/decisions.md` are done. Next is step 7, declared module dependencies. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step after step 7.
+Steps 1 to 7 of the implementation order in `docs/decisions.md` are done. Next is step 8, a review of the host API against Lua constraints. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
 
 ## Response style
 

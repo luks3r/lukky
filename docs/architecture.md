@@ -32,7 +32,7 @@ The scheduler runs module tasks on its own, outside this flow. Modules may also 
 
 **Module.** An independent unit of functionality with a name. When it starts, it registers commands, event subscriptions, and timers. It owns its business logic, its configuration, and its data. Modules are compiled in today. Script-based extensions are planned for later, and they will follow the same contract.
 
-**Module manager.** Loads, unloads, and reloads modules. Lifecycle changes happen one at a time. A reload is an unload followed by a load. In between there is a short gap when the module handles nothing. **(planned)** A module may declare the names of modules it requires. Loading fails if a required module is missing. Unloading fails while dependent modules are still loaded. There is no automatic ordering and no dependency graph.
+**Module manager.** Loads, unloads, and reloads modules. Lifecycle changes happen one at a time. A reload is an unload followed by a load. In between there is a short gap when the module handles nothing. A module may declare the names of modules it requires. Loading fails if a required module is missing. Unloading fails while dependent modules are still loaded. Shutdown unloads in reverse load order, so dependents stop first. There is no automatic ordering and no dependency graph.
 
 **Scope.** Every loaded module gets its own scope. Each command, subscription, timer, and background task belongs to the scope that created it. On unload, the scope:
 
