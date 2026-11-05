@@ -30,7 +30,7 @@ The scheduler runs module tasks on its own, outside this flow. Modules may also 
 
 **Core.** The runtime and its shared services. It knows nothing about Twitch, OBS, donations, or any other integration.
 
-**Module.** An independent unit of functionality with a name. When it starts, it registers commands, event subscriptions, and timers. It owns its business logic, its configuration, and its data. Modules are compiled in today. Script-based extensions are planned for later, and they will follow the same contract.
+**Module.** An independent unit of functionality with a name. When it starts, it registers commands, event subscriptions, and timers. It owns its business logic, its configuration, and its data. Modules are compiled in today. Lua modules follow the same contract.
 
 **Module manager.** Loads, unloads, and reloads modules. Lifecycle changes happen one at a time. A reload is an unload followed by a load. In between there is a short gap when the module handles nothing. A module may declare the names of modules it requires. Loading fails if a required module is missing. Unloading fails while dependent modules are still loaded. Shutdown unloads in reverse load order, so dependents stop first. There is no automatic ordering and no dependency graph.
 
@@ -100,8 +100,8 @@ The dispatcher and router take snapshots of their registrations before calling h
 
 Cancellation is cooperative. Code that blocks must watch its context, or unloading waits forever. A module must not call manager operations from its start or stop hook. Its callbacks must not unload their own module, because the operation would wait on itself.
 
-## Extensions (future)
+## Lua modules
 
-Script-based extensions will load from the filesystem. They will use ordinary Lua with LuaLS annotations and StyLua formatting. An extension is a complete module: it has commands, event handlers, timers, and storage. It follows the same lifecycle and scope rules as a compiled module, and it reaches the host only through the documented host services. Interfaces passed directly between compiled modules are not available to extensions. Extensions communicate with other modules through events.
+Lua modules load from the filesystem. They use ordinary Lua with LuaLS annotations and StyLua formatting. A Lua module is a complete module: it has commands, event handlers, timers, and storage. It follows the same lifecycle and scope rules as a compiled module, and it reaches the host only through the documented host services. Interfaces passed directly between compiled modules are not available to Lua modules. They communicate with other modules through events.
 
-Lua runs on `iceisfun/golua` v2 (Lua 5.5), chosen by prototype. [Lua extensions](lua.md) maps the host API to Lua, records the constraints (one locked state per module, interruptible scripts, no background tasks at first), and documents the prototype results.
+Lua runs on `iceisfun/golua` v2 (Lua 5.5), chosen by prototype. [Lua modules](lua.md) describes usage, the host API in Lua, the constraints (one locked state per module, interruptible scripts, no background tasks at first), and the prototype results.

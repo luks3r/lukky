@@ -4,6 +4,7 @@ go 1.27
 
 require (
 	github.com/gempir/go-twitch-irc/v4 v4.4.1
+	github.com/iceisfun/golua/v2 v2.0.5
 	github.com/knadh/koanf/parsers/dotenv v1.1.3
 	github.com/knadh/koanf/parsers/toml/v2 v2.2.2
 	github.com/knadh/koanf/providers/env/v2 v2.0.2

@@ -1,6 +1,14 @@
-# Lua extensions: host API review
+# Lua modules
 
-This review checks each part of the host API against what a Lua runtime can support. The goal is that a Lua module can do what a Go module does, without the core knowing which language a module uses. Nothing here is implemented yet, apart from the changes listed under "Changes made now".
+Lua modules run on `iceisfun/golua` v2 (Lua 5.5) through the `lua` package. A Lua module can do what a Go module does, apart from the two gaps under "Equivalence limits", and the core does not know which language a module uses.
+
+## Using Lua modules
+
+- Put each module in its own directory under `scripts/` (set `lua.dir` to change it). The directory needs an `init.lua`.
+- Lukky loads every module at startup. A module whose requirements are not loaded yet is retried after the others. A broken module is logged and skipped.
+- `:reload <module>` in the console reads `init.lua` from disk again. The module's storage survives the reload.
+- `examples/lua/shoutout` is a working example. Copy it into `scripts/` to try it.
+- For editor support, LuaLS reads `.luarc.json`, which points at the type definitions in `lua/types`. Format with `task lua-fmt` (StyLua).
 
 ## Shape of a Lua module
 
@@ -32,7 +40,7 @@ A Go adapter type wraps the table and implements `core.Module`, `core.Stopper`, 
 | `Name`, `Requires`, `Start`, `Stop` | table fields | Read once at load. |
 | `host.Handle(Prefix(x), h)` | `host.command(x, fn, opts)` | `opts.role` wraps the matcher with `RequireRole`. |
 | `Exact`, `Regex` | `host.exact`, `host.regex` | Regex uses Go RE2 syntax, not Lua patterns. |
-| custom `Matcher` | `host.match(fn, handler)` | Allowed, but runs on every message: keep it cheap. |
+| custom `Matcher` | not offered | A Lua matcher would run on every message. Add it if a module needs one. |
 | `core.Subscribe` / `core.Emit` | `host.on(topic, fn)` / `host.emit(topic, table)` | Untyped at the boundary; see "Events". |
 | `host.Every`, `host.After` | same names, seconds as numbers | |
 | `host.Go` | not offered at first | See "Concurrency". |
@@ -41,6 +49,9 @@ A Go adapter type wraps the table and implements `core.Module`, `core.Stopper`, 
 | `host.Send`, `host.Reply` | same names | |
 | `host.Logger()` | `host.log.info(msg, fields)` and so on | |
 | `host.Context()` | none | Cancellation is handled by the runtime; see below. |
+| — | `host.json.encode/decode` | Converts between tables and JSON text. |
+
+Every host function raises a Lua error when the host call fails, for example when a send fails or an argument has the wrong type. The error ends the callback and is logged by the caller, like an error returned from a Go handler. Use `pcall` to handle it in Lua. `print` writes to the module's log.
 
 ## Constraints and decisions
 
@@ -59,17 +70,17 @@ A Go adapter type wraps the table and implements `core.Module`, `core.Stopper`, 
 - `core.Role` converts to a list of role names
 - slices become arrays and maps become tables
 
-The other direction, a Lua module emitting on a topic that a Go module consumes with `core.Subscribe`, needs decoding into the Go type. Plan: `Subscribe[T]` decodes a table-shaped payload into `T` through its JSON form. This lands with the runtime, because nothing produces such payloads before then.
+In the other direction, a Lua module emits a table, and `core.Subscribe[T]` decodes that map or list payload into `T` through its JSON form.
 
 **Errors.** Go errors returned to Lua become Lua errors. Lua errors and panics become Go errors with the Lua traceback, and go through the same panic containment as Go modules.
 
-**Sandboxing.** Lua modules get no `os`, `io`, `debug`, or module loading from arbitrary paths. The host table is their only capability. This also makes the instruction limit meaningful.
+**Sandboxing.** Lua modules get no `os`, `io`, or `debug` library, and `load`, `loadfile`, `dofile`, `require`, and `package` are removed. The host table is their only capability. This also makes the instruction limit meaningful. Each callback may run `lua.max_instructions` instructions (10 million by default).
 
 **Equivalence limits.** Two gaps remain by design: Lua modules cannot call Go interfaces of other modules directly (they use events), and they have no background tasks at first. Everything else in the host API is available.
 
-## Changes made now
+## Payload contract
 
-To fix the payload contract before any Lua code exists:
+Fixed before the bridge existed, so Go and Lua agree on field names:
 
 - `Message`, `User`, and `Target` have snake_case `json` tags, and `Message.Raw` is excluded.
 - `core.Role` marshals to and from a list of names, such as `["subscriber","moderator"]`.

@@ -9,7 +9,7 @@ This repository is a working foundation, **not yet a production-ready Twitch bot
 ## Requirements
 
 - Go 1.27 or newer
-- Main libraries: [`go-twitch-irc`](https://github.com/gempir/go-twitch-irc) for Twitch chat, [`modernc.org/sqlite`](https://pkg.go.dev/modernc.org/sqlite) for storage (pure Go, no cgo), [`koanf`](https://github.com/knadh/koanf) for configuration, and [`tint`](https://github.com/lmittmann/tint) for terminal logs
+- Main libraries: [`go-twitch-irc`](https://github.com/gempir/go-twitch-irc) for Twitch chat, [`modernc.org/sqlite`](https://pkg.go.dev/modernc.org/sqlite) for storage (pure Go, no cgo), [`koanf`](https://github.com/knadh/koanf) for configuration, [`tint`](https://github.com/lmittmann/tint) for terminal logs, and [`golua`](https://github.com/iceisfun/golua) for Lua modules
 - For development: [Task](https://taskfile.dev) and [golangci-lint](https://golangci-lint.run) (`brew install go-task golangci-lint`)
 
 ## Run it
@@ -31,16 +31,34 @@ bot: Saved !discord
 bot: Join us at https://example.com/community
 > !aliases
 bot: Aliases: !discord
-> :reload-aliases
-aliases module reloaded
+> :reload aliases
+aliases reloaded
 > !discord
-bot: https://example.com/community
+bot: Join us at https://example.com/community
 > :quit
 ```
 
-An alias name may contain any characters except whitespace, for example `!c++` or `!привет`. The text is any message up to 500 characters. `!delalias discord` removes an alias. Only moderators and the broadcaster can add or remove aliases; the console user counts as the broadcaster. `:modules` lists loaded modules. The `:reload-aliases` control command is part of the console demo; it is not a chat command.
+An alias name may contain any characters except whitespace, for example `!c++` or `!привет`. The text is any message up to 500 characters. `!delalias discord` removes an alias. Only moderators and the broadcaster can add or remove aliases; the console user counts as the broadcaster. `:modules` lists loaded modules, and `:reload <module>` reloads one. Control commands start with `:` and exist only in the console, not in chat.
 
 The greeter module also posts a reminder every two minutes. Timers exist only in memory, so their schedule starts fresh each time the module loads.
+
+## Lua modules
+
+Write a module in Lua instead of Go: put a directory with an `init.lua` into `scripts/`. Lukky loads it at startup, and `:reload <module>` picks up edits without a restart.
+
+```lua
+---@type lukky.Module
+return {
+  name = "hello",
+  start = function(host)
+    host.command("!hello", function(msg)
+      host.reply(msg, "Hello, " .. msg.user.display_name)
+    end)
+  end,
+}
+```
+
+Lua modules have the same commands, events, timers, and storage as Go modules, and run sandboxed. See [Lua modules](docs/lua.md) and the example in `examples/lua/shoutout`.
 
 ## Configuration
 
@@ -76,6 +94,8 @@ core/                 Module lifecycle, event bus, command router, scheduler
 adapters/twitch/      Twitch chat over IRC and token management
 modules/greeter/      Small static command and timer example
 modules/aliases/      User-managed text aliases stored in host storage
+lua/                  Lua module runtime; LuaLS type definitions in lua/types
+examples/lua/         Example Lua modules
 storage/sqlite/       SQLite database for host storage
 storage/storagetest/  Shared tests for storage backends
 docs/                 Architecture, module guide, Lua plan, and design decisions
@@ -108,7 +128,7 @@ The aliases module demonstrates an intentional distinction: `!addalias` is a bui
 
 ## Current limits
 
-Lukky currently has no HTTP host API or Lua runtime. Module data, such as aliases, is stored in the SQLite database `.lukky/lukky.sqlite` and survives restarts. You can inspect it with `sqlite3`, but only while Lukky is stopped: Lukky holds an exclusive lock, so only one process can use the file at a time. Those are possible integrations, not hidden dependencies. Modules are compiled into the application for now; `Load` and `Unload` control their runtime registrations, not Go dynamic linking.
+Lukky currently has no HTTP host API. Module data, such as aliases, is stored in the SQLite database `.lukky/lukky.sqlite` and survives restarts. You can inspect it with `sqlite3`, but only while Lukky is stopped: Lukky holds an exclusive lock, so only one process can use the file at a time. Those are possible integrations, not hidden dependencies. Go modules are compiled into the application; `Load` and `Unload` control their runtime registrations, not Go dynamic linking. Lua modules load from disk at runtime.
 
 The host expects module callbacks to cooperate with context cancellation. Unloading a module waits for its running work to finish; a callback that ignores cancellation can therefore block shutdown. Also, callbacks must not synchronously unload their own module.
 

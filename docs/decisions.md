@@ -42,11 +42,12 @@ Each choice lists its reason. The list separates what we rule out from what we s
 
 **Layered configuration.** Settings come from `lukky.toml`, then `.env`, then the environment, with later sources winning. Secrets live only in `.env` or the environment. *Why:* one mechanism serves application settings, module settings, and secrets. Script manifests will be written in the script language itself.
 
+**Lua modules on `iceisfun/golua` v2.** *Why:* it is the only candidate that stops a running script on context cancellation and frees the goroutines of abandoned coroutines. A Lua module gets one state behind a per-module lock and runs sandboxed with an instruction limit per callback. See `lua.md`.
+
 **Go for the core.** Go fits "simple and understandable" and fast iteration while the API is still changing. A pure-Go Lua runtime covers the extension goals.
 
 ## Deferred
 
-- **Lua extensions.** The runtime is chosen: `iceisfun/golua` v2, because it supports per-call context cancellation and closes coroutine goroutines. See `lua.md` for the prototype results. The bridge is next.
 - **HTTP and WebSocket services.** Added when an integration needs them. An outbound HTTP client is a service, not an event transport.
 - **Stronger lifecycle.** Atomic replacement, stop timeouts, and cascading unload are deferred until a real need appears.
 
@@ -77,4 +78,4 @@ Each choice lists its reason. The list separates what we rule out from what we s
 6. Typed topics (done).
 7. Declared module dependencies (done).
 8. Review the host API against Lua constraints (done, see `lua.md`).
-9. Lua runtime prototype (done: `iceisfun/golua` v2), then implementation.
+9. Lua runtime prototype and implementation (done: `iceisfun/golua` v2, see `lua.md`).

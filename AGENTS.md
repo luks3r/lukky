@@ -11,7 +11,7 @@ Read these before changing behavior:
 - `docs/architecture.md`: building blocks and lifecycle
 - `docs/decisions.md`: what is decided, deferred, and out of scope, plus the implementation order
 - `docs/modules.md`: how to write a module
-- `docs/lua.md`: how the host API maps to future Lua modules
+- `docs/lua.md`: Lua modules: usage, host API, constraints
 
 ## Layout
 
@@ -20,6 +20,8 @@ cmd/lukky/            Wiring, configuration (koanf), local console
 core/                 Manager, scopes, event bus, router, scheduler, storage interface
 adapters/twitch/      Twitch chat over IRC and token management
 modules/              Feature modules (greeter, aliases)
+lua/                  Lua module runtime and LuaLS type definitions (lua/types)
+examples/lua/         Example Lua modules
 storage/sqlite/       SQLite backend for host storage
 storage/storagetest/  Contract tests every storage backend must pass
 docs/                 Architecture, decisions, module guide
@@ -55,6 +57,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 - Run `go fix ./...` after larger edits.
 - Write timer and scheduling tests with `testing/synctest`, not real sleeps.
 - New storage backends must pass `storagetest.Run`.
+- Keep `lua/types/lukky.lua` in sync with the host table in `lua/host.go`.
 - Add a `//nolint` only with the linter name and a reason.
 - Keep comments short and about why, not what.
 
@@ -77,7 +80,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 
 ## Status
 
-Steps 1 to 8 of the implementation order in `docs/decisions.md` are done, and the step 9 prototype chose `iceisfun/golua` v2. Next is the Lua bridge, following `docs/lua.md`. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
+All nine steps of the implementation order in `docs/decisions.md` are done, including Lua modules. Candidates next: migrating Twitch chat to EventSub plus Helix, and CI. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
 
 ## Response style
 

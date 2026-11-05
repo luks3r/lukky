@@ -52,6 +52,15 @@ func (r Role) Names() []string {
 	return names
 }
 
+// ParseRole returns the role with the given name, such as "moderator".
+func ParseRole(name string) (Role, error) {
+	i := slices.IndexFunc(roleNames, func(rn roleName) bool { return rn.name == name })
+	if i < 0 {
+		return 0, fmt.Errorf("unknown role %q", name)
+	}
+	return roleNames[i].role, nil
+}
+
 // MarshalJSON encodes roles as a list of names, for example ["subscriber","moderator"].
 func (r Role) MarshalJSON() ([]byte, error) { return json.Marshal(r.Names()) }
 
@@ -62,11 +71,11 @@ func (r *Role) UnmarshalJSON(data []byte) error {
 	}
 	var roles Role
 	for _, name := range names {
-		i := slices.IndexFunc(roleNames, func(rn roleName) bool { return rn.name == name })
-		if i < 0 {
-			return fmt.Errorf("unknown role %q", name)
+		role, err := ParseRole(name)
+		if err != nil {
+			return err
 		}
-		roles |= roleNames[i].role
+		roles |= role
 	}
 	*r = roles
 	return nil

@@ -93,14 +93,30 @@ func run(cfg Config) error {
 		return err
 	}
 	defer closeAndLog("modules", manager.Close)
-	for _, module := range []core.Module{
-		chatIngress{router: commands},
-		&greeter.Module{Interval: cfg.Greeter.Interval, Channel: consoleTarget},
-		aliases.New(otherCommands...),
-	} {
+	// Go modules load in this order; Lua modules follow.
+	goModules := []struct {
+		name string
+		new  factory
+	}{
+		{"chat-ingress", func() (core.Module, error) { return chatIngress{router: commands}, nil }},
+		{"greeter", func() (core.Module, error) {
+			return &greeter.Module{Interval: cfg.Greeter.Interval, Channel: consoleTarget}, nil
+		}},
+		{"aliases", func() (core.Module, error) { return aliases.New(otherCommands...), nil }},
+	}
+	factories := map[string]factory{}
+	for _, m := range goModules {
+		module, err := m.new()
+		if err != nil {
+			return err
+		}
 		if err := manager.Load(module); err != nil {
 			return err
 		}
+		factories[m.name] = m.new
+	}
+	for name, newModule := range loadLuaModules(manager, cfg) {
+		factories[name] = newModule
 	}
 
 	var adapters sync.WaitGroup
@@ -117,7 +133,7 @@ func run(cfg Config) error {
 
 	printConsoleHelp()
 	quit := make(chan bool, 1)
-	go func() { quit <- readConsole(ctx, events, manager) }()
+	go func() { quit <- readConsole(ctx, events, manager, factories) }()
 	select {
 	case <-ctx.Done():
 	case requested := <-quit:

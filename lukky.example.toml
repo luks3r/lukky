@@ -11,3 +11,7 @@ channels = []
 
 [greeter]
 interval = "2m" # console reminder; "0s" disables it
+
+[lua]
+dir = "scripts" # one subdirectory with an init.lua per module
+# max_instructions = 10000000 # per callback
