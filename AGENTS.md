@@ -11,6 +11,7 @@ Read these before changing behavior:
 - `docs/architecture.md`: building blocks and lifecycle
 - `docs/decisions.md`: what is decided, deferred, and out of scope, plus the implementation order
 - `docs/modules.md`: how to write a module
+- `docs/lua.md`: how the host API maps to future Lua modules
 
 ## Layout
 
@@ -76,7 +77,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 
 ## Status
 
-Steps 1 to 7 of the implementation order in `docs/decisions.md` are done. Next is step 8, a review of the host API against Lua constraints. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
+Steps 1 to 8 of the implementation order in `docs/decisions.md` are done. Next is step 9, the Lua runtime prototype described in `docs/lua.md`. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
 
 ## Response style
 

@@ -78,7 +78,7 @@ modules/greeter/      Small static command and timer example
 modules/aliases/      User-managed text aliases stored in host storage
 storage/sqlite/       SQLite database for host storage
 storage/storagetest/  Shared tests for storage backends
-docs/                 Architecture, extension guide, and design decisions
+docs/                 Architecture, module guide, Lua plan, and design decisions
 ```
 
 The central concept is a **module**. A module declares its name and registers the work it wants to perform. It does not need to manage individual subscription or timer lifetimes: the host tracks them under the module's scope.

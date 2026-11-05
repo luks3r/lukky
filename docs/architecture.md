@@ -86,7 +86,7 @@ Roles are normalized as subscriber, VIP, moderator, and broadcaster. A user may 
 
 - **Events** carry occurrences between modules. They work for every module, whatever its implementation language.
 - **Direct typed interfaces** between compiled-in modules are passed in when the application is wired. No global service registry exists.
-- **Event payloads** are plain data: primitives, lists, maps, and nested records, with no functions or shared mutable state. Every module runtime can then read and convert them. Topics carry their payload type, so producers and consumers agree on the payload at compile time. A payload of the wrong type, published through the untyped API, is reported as an error and never reaches the handler.
+- **Event payloads** are plain data: primitives, lists, maps, and nested records, with no functions or shared mutable state. Every module runtime can then read and convert them. Field names follow `json` tags; chat messages, users, and targets use snake_case, and roles encode as a list of names. Topics carry their payload type, so producers and consumers agree on the payload at compile time. A payload of the wrong type, published through the untyped API, is reported as an error and never reaches the handler.
 
 ## State and lifetime
 
@@ -104,4 +104,4 @@ Cancellation is cooperative. Code that blocks must watch its context, or unloadi
 
 Script-based extensions will load from the filesystem. They will use ordinary Lua with LuaLS annotations and StyLua formatting. An extension is a complete module: it has commands, event handlers, timers, and storage. It follows the same lifecycle and scope rules as a compiled module, and it reaches the host only through the documented host services. Interfaces passed directly between compiled modules are not available to extensions. Extensions communicate with other modules through events.
 
-The Lua runtime is not chosen yet. Candidates will be compared with a small prototype. The prototype must show that unloading interrupts a busy script, that no goroutines leak, and that payload conversion stays simple.
+The Lua runtime is not chosen yet. [Lua extensions: host API review](lua.md) maps the host API to Lua, records the constraints (one locked state per module, interruptible scripts, no background tasks at first), and defines the prototype that will pick the runtime.
