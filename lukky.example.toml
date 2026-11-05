@@ -1,0 +1,13 @@
+# Copy to lukky.toml. Keep secrets out of this file: put them in .env.
+# Environment variables override these values, for example
+# TWITCH_CHANNELS="a,b" or LUKKY_GREETER_INTERVAL="5m".
+
+[log]
+level = "info" # debug, info, warn, error
+
+[twitch]
+# Channel logins to join. Twitch is enabled by TWITCH_CLIENT_ID in .env.
+channels = []
+
+[greeter]
+interval = "2m" # console reminder; "0s" disables it

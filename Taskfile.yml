@@ -1,0 +1,46 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Format, lint, test, and scan for vulnerabilities
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: test
+      - task: vuln
+
+  run:
+    desc: Run Lukky with lukky.toml and .env from this directory
+    cmds:
+      - go run ./cmd/lukky
+
+  build:
+    desc: Build the lukky binary
+    cmds:
+      - go build -o lukky ./cmd/lukky
+
+  test:
+    desc: Run all tests with the race detector
+    cmds:
+      - go test -race ./...
+
+  lint:
+    desc: Run golangci-lint (install with `brew install golangci-lint`)
+    cmds:
+      - golangci-lint run ./...
+
+  fmt:
+    desc: Format code with gofumpt and goimports
+    cmds:
+      - golangci-lint fmt ./...
+
+  vuln:
+    desc: Check dependencies for known vulnerabilities
+    cmds:
+      - go tool govulncheck ./...
+
+  tidy:
+    desc: Tidy go.mod and apply go fix modernizations
+    cmds:
+      - go mod tidy
+      - go fix ./...

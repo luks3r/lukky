@@ -1,0 +1,16 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Configs
+lukky.toml
+
+# Local state
+.lukky/
+
+# Build output
+/lukky
+
+# AI. Probably.
+.claude
