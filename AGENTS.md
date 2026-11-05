@@ -77,7 +77,7 @@ Run `task` before you finish. It must report 0 lint issues and passing tests.
 
 ## Status
 
-Steps 1 to 8 of the implementation order in `docs/decisions.md` are done. Next is step 9, the Lua runtime prototype described in `docs/lua.md`. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
+Steps 1 to 8 of the implementation order in `docs/decisions.md` are done, and the step 9 prototype chose `iceisfun/golua` v2. Next is the Lua bridge, following `docs/lua.md`. Twitch recommends EventSub plus Helix over IRC for chatbots; a migration is a candidate step.
 
 ## Response style
 

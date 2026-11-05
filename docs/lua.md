@@ -74,13 +74,30 @@ To fix the payload contract before any Lua code exists:
 - `Message`, `User`, and `Target` have snake_case `json` tags, and `Message.Raw` is excluded.
 - `core.Role` marshals to and from a list of names, such as `["subscriber","moderator"]`.
 
-## Runtime prototype (step 9)
+## Runtime choice: iceisfun/golua v2
 
-Compare `iceisfun/golua` and `arnodel/golua` with one test module that registers a command, subscribes to `chat.message`, starts a timer, and stores a value. Then measure:
+A prototype (November 2026) ran the same test module on `iceisfun/golua` v2.0.5 and `arnodel/golua` (lua5.5 branch, 2026-11-03). Both had a host table with `reply`, `put`, and `get`, received a `core.Message` converted through its JSON form, and ran each call under a per-module lock.
 
-1. Unloading a module that runs `while true do end` returns within 100 ms.
-2. `runtime.NumGoroutine` returns to its baseline after unload.
-3. The amount of glue code for payload conversion and the host table.
-4. LuaLS support for the language version, set through `runtime.version`.
+| Check | iceisfun/golua v2 | arnodel/golua |
+|---|---|---|
+| Payload conversion and host calls | pass | pass, after declaring every host function time-safe |
+| Lua error becomes a Go error; state stays usable | pass | pass |
+| Busy loop stops on context cancel | pass: returns at once | no: no `context.Context` support; a running call cannot be stopped from another goroutine |
+| Runaway stopped by a limit | pass: instruction limit, 8 ms | pass: CPU limit, 6 ms |
+| No goroutine leak (50 cycles) | pass, also with suspended coroutines | leaks one goroutine per abandoned coroutine; the runtime has no close |
+| Call cost (`on_message`) | 7.6 µs, 87 allocations | 10.2 µs, 107 allocations |
+| Glue code for the prototype | 106 lines | 108 lines |
+| Binary size added (stdlib) | 3.1 MB | 8.3 MB |
+| Language version | Lua 5.5 | Lua 5.5 |
 
-Choose the runtime that passes 1 and 2 with the least glue code.
+arnodel can only bound a call with a wall-clock limit, so unload would wait up to that limit, and the limit would also cap every legitimate callback. Its leaking coroutines would need extra tracking in the bridge.
+
+**Decision:** use `iceisfun/golua/v2`. It meets both hard requirements directly: `SetContext` per call stops a script on unload, and `VM.Close` releases coroutine goroutines. `MaxInstructions` with `ResetInstructionCount` gives a per-callback budget. A bare `vm.New()` has no file, OS, or process access.
+
+**Risk:** the project has a single maintainer and few users. Mitigations:
+
+- pin the version in `go.mod` and review upgrades
+- keep all runtime-specific code in one package, so a swap stays local
+- port the prototype checks into that package's tests, so a replacement must pass the same criteria
+
+LuaLS lists Lua 5.5 as supported ([marketplace](https://marketplace.visualstudio.com/items?itemName=sumneko.lua), [PR #3218](https://github.com/LuaLS/lua-language-server/pull/3218)); set `runtime.version` to `"Lua 5.5"`, or `"Lua 5.4"` if an editor's LuaLS build predates it.

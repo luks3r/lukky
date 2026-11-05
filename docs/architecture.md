@@ -104,4 +104,4 @@ Cancellation is cooperative. Code that blocks must watch its context, or unloadi
 
 Script-based extensions will load from the filesystem. They will use ordinary Lua with LuaLS annotations and StyLua formatting. An extension is a complete module: it has commands, event handlers, timers, and storage. It follows the same lifecycle and scope rules as a compiled module, and it reaches the host only through the documented host services. Interfaces passed directly between compiled modules are not available to extensions. Extensions communicate with other modules through events.
 
-The Lua runtime is not chosen yet. [Lua extensions: host API review](lua.md) maps the host API to Lua, records the constraints (one locked state per module, interruptible scripts, no background tasks at first), and defines the prototype that will pick the runtime.
+Lua runs on `iceisfun/golua` v2 (Lua 5.5), chosen by prototype. [Lua extensions](lua.md) maps the host API to Lua, records the constraints (one locked state per module, interruptible scripts, no background tasks at first), and documents the prototype results.

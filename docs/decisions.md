@@ -46,7 +46,7 @@ Each choice lists its reason. The list separates what we rule out from what we s
 
 ## Deferred
 
-- **Lua extensions.** Planned after the core API is stable. The runtime choice depends on a prototype that compares candidates.
+- **Lua extensions.** The runtime is chosen: `iceisfun/golua` v2, because it supports per-call context cancellation and closes coroutine goroutines. See `lua.md` for the prototype results. The bridge is next.
 - **HTTP and WebSocket services.** Added when an integration needs them. An outbound HTTP client is a service, not an event transport.
 - **Stronger lifecycle.** Atomic replacement, stop timeouts, and cascading unload are deferred until a real need appears.
 
@@ -77,4 +77,4 @@ Each choice lists its reason. The list separates what we rule out from what we s
 6. Typed topics (done).
 7. Declared module dependencies (done).
 8. Review the host API against Lua constraints (done, see `lua.md`).
-9. Lua runtime prototype, then implementation.
+9. Lua runtime prototype (done: `iceisfun/golua` v2), then implementation.
